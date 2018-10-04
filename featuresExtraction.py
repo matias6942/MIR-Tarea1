@@ -45,11 +45,18 @@ def sobelFilter(filename, sobel_threshold, frameStride):
     with a sobel_threshold with a specified frameStride 
     beginning from the first frame of the capture.
     """
-    capture = openVideo(filename)
     
+    capture = openVideo(filename)
+
+    # Data extracted from video
+    frameTimestamps = []
+    frameDescriptors = []
+
+    """    
     # DEBUG
     totalFrames = capture.get(cv2.CAP_PROP_FRAME_COUNT)
     print("This video file contains " + str(int(totalFrames)) + " frames.")
+    """
 
     frameCount = 0
     while(capture.isOpened()):
@@ -59,15 +66,20 @@ def sobelFilter(filename, sobel_threshold, frameStride):
             frameCount+=1
             if(frameCount == 1 or frameCount % frameStride == 0):
                 
-                # DEBUG
-                frameTimestamp = "{0:.2f}".format(round(capture.get(0),2))
+                """
+                # DEBUG                
                 frameIndex = int(capture.get(cv2.CAP_PROP_POS_FRAMES))
                 print(str(frameIndex) + " " + frameTimestamp)
+                """
 
+                # Save timestamp for each frame
+                frameTimestamp = "{0:.1f}".format(round(capture.get(0),2))
+                frameTimestamps.append(frameTimestamp)
+                
                 # Frame Processing
 
                 ## Resize frame
-                frame = cv2.resize(frame, (1080, 720))
+                frame = cv2.resize(frame, (10, 10))
 
                 ## frame to gray scale (improves filter preformance) 
                 grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -81,30 +93,52 @@ def sobelFilter(filename, sobel_threshold, frameStride):
                 #gradientAbs = np.sqrt(np.square(sobelX) + np.square(sobelY))
                 gradientAbs = np.abs(sobelX) + np.abs(sobelY)
 
-                # Apply Sobel Threshold
+                # Apply Sobel Threshold to obtain a descriptor 
                 retval, borders = cv2.threshold(gradientAbs, thresh=sobel_threshold, maxval=255, type=cv2.THRESH_BINARY)
 
-                showFrame("Filtered Frame", borders, scaleMin0Max255=True)
+                # Save each descriptor
+                frameDescriptors.append(borders.flatten())   
+                len(frameDescriptors)
+                 
+
+                #showFrame("Filtered Frame", borders, scaleMin0Max255=True)
+
                 
                 # Normal Speed cv2.waitKey(25) 
                 # Max Speed     cv.waitKey(1)
-                if cv2.waitKey(45) & 0xFF == ord('q'):
+                if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
         
         else:
-            print("Frames Filtering has Finished!" + "\n")
             break
+
     capture.release()
     cv2.destroyAllWindows()
 
+    return frameTimestamps, frameDescriptors
 
-
-#videoPath = input("Hi! Enter the video file name to process please: ")
-videoPath = '../CC5213-Tarea1/comerciales/ballerina.mpg'
+## Set Params and Run
 
 sobel_threshold = 150
 frameStride = 4
 
-sobelFilter(videoPath, sobel_threshold, frameStride)
-print("FIN")
+video_television = input("\n" + "Ingrese el nombre del video de televisión (con su extensión): ")
+video_television_path = "../CC5213-Tarea1/television/" + video_television 
+print("\n" + "Comenzando Extracción de Características del video del televisión " + video_television)
+#frameTimestamps, frameDescriptors =  sobelFilter(video_television_path, sobel_threshold, frameStride)
+print("\n" + "Los descriptores del video " + video_television + " han sido guardados en el archivo: ASDASD")
 
+
+#videoPath = '../CC5213-Tarea1/comerciales/ballerina.mpg'
+
+"""
+# DEBUG
+print("\n" + "######## DEBUG ########")
+print("\n" + video_television + "\n")
+
+#print("\n" + str(frameTimestamps[0]) + "\n" + str(frameDescriptors[0]) + "\n")
+#videoPath = 'mega-2014_04_10'
+#videoName = str(os.path.basename(videoPath).split(".")[0])
+print("#######################" + "\n")
+
+"""
