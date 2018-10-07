@@ -3,6 +3,7 @@
 import numpy as np
 import cv2 
 import os
+from datetime import datetime
 
 def openVideo(filename = None):
     """Given a filename, checks if the file exist and is accesible 
@@ -52,12 +53,6 @@ def sobelFilter(filename, sobel_threshold, frameStride):
     frameTimestamps = []
     frameDescriptors = []
 
-    """    
-    # DEBUG
-    totalFrames = capture.get(cv2.CAP_PROP_FRAME_COUNT)
-    print("This video file contains " + str(int(totalFrames)) + " frames.")
-    """
-
     frameCount = 0
     while(capture.isOpened()):
         success, frame = capture.read()
@@ -90,24 +85,22 @@ def sobelFilter(filename, sobel_threshold, frameStride):
 
                 ## Gradient Magnitude or Approximation for Gradient Magnitude (Only Choose One!)
                 
-                #gradientAbs = np.sqrt(np.square(sobelX) + np.square(sobelY))
-                gradientAbs = np.abs(sobelX) + np.abs(sobelY)
+                gradientAbs = np.sqrt(np.square(sobelX) + np.square(sobelY))
+                #gradientAbs = np.abs(sobelX) + np.abs(sobelY)
 
                 # Apply Sobel Threshold to obtain a descriptor 
                 retval, borders = cv2.threshold(gradientAbs, thresh=sobel_threshold, maxval=255, type=cv2.THRESH_BINARY)
 
-                # Save each descriptor
-                frameDescriptors.append(borders.flatten())   
-                len(frameDescriptors)
-                 
+                # Save each descriptor normalized
+                frameDescriptors.append(borders.flatten()/255)                    
 
-                #showFrame("Filtered Frame", borders, scaleMin0Max255=True)
-
-                
+                """
+                showFrame("Filtered Frame", frame, scaleMin0Max255=True)
                 # Normal Speed cv2.waitKey(25) 
                 # Max Speed     cv.waitKey(1)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+                """
         
         else:
             break
@@ -122,23 +115,63 @@ def sobelFilter(filename, sobel_threshold, frameStride):
 sobel_threshold = 150
 frameStride = 4
 
-video_television = input("\n" + "Ingrese el nombre del video de televisión (con su extensión): ")
-video_television_path = "../CC5213-Tarea1/television/" + video_television 
-print("\n" + "Comenzando Extracción de Características del video del televisión " + video_television)
-#frameTimestamps, frameDescriptors =  sobelFilter(video_television_path, sobel_threshold, frameStride)
-print("\n" + "Los descriptores del video " + video_television + " han sido guardados en el archivo: ASDASD")
+t_inicial = datetime.now()
 
+std_input = input("\n" + "Ingrese el nombre del video de televisión" + 
+"(con su extensión) y luego el nombre de la carpeta con los comerciales " +
+"a detectar SEPARADOS POR UN ESPACIO: " + "\n") 
 
-#videoPath = '../CC5213-Tarea1/comerciales/ballerina.mpg'
+video_television = std_input.split(" ")[0]
+video_comercial_path = "../" + std_input.split(" ")[1]
 
-"""
-# DEBUG
-print("\n" + "######## DEBUG ########")
-print("\n" + video_television + "\n")
+video_television_path = "./television/" + video_television
 
-#print("\n" + str(frameTimestamps[0]) + "\n" + str(frameDescriptors[0]) + "\n")
-#videoPath = 'mega-2014_04_10'
-#videoName = str(os.path.basename(videoPath).split(".")[0])
-print("#######################" + "\n")
+frameTimestamps, frameDescriptors =  sobelFilter(video_television_path, sobel_threshold, frameStride)
 
-"""
+videoName = str(os.path.basename(video_television_path).split(".")[0])
+
+TelevisionDescriptors = "TelevisionDescriptors"
+
+if not os.access(TelevisionDescriptors, os.F_OK):
+    os.mkdir(TelevisionDescriptors)
+
+os.chdir("./" + TelevisionDescriptors)
+television_frameTimestamps  = open("frameTimestamps_" + videoName, "w")
+television_frameDescriptors = open("frameDescriptors_" + videoName, "w")
+
+for timestamp in frameTimestamps:
+    television_frameTimestamps.write("%s\n" % timestamp)
+television_frameTimestamps.close()
+
+for descriptor in frameDescriptors:
+    television_frameDescriptors.write("%s\n" % descriptor)
+television_frameDescriptors.close()
+
+os.chdir("../")
+
+CommercialsDescriptors = "CommercialsDescriptors"
+
+if not os.access(CommercialsDescriptors, os.F_OK):
+    os.mkdir(CommercialsDescriptors)
+
+os.chdir("./" + CommercialsDescriptors)
+for commercial in os.listdir(video_comercial_path):
+    video_comercial = video_comercial_path + "/" + commercial
+    frameTimestamps, frameDescriptors = sobelFilter(video_comercial, sobel_threshold, frameStride)
+
+    commercial = str(os.path.basename(commercial.split(".")[0]))
+    commercial_frameDescriptors = open("frameDescriptors_" + commercial, "w")
+
+    for descriptor in frameDescriptors:
+        commercial_frameDescriptors.write("%s\n" % descriptor)
+    commercial_frameDescriptors.close()
+
+os.chdir("./")
+
+print("\n" + "La extracción de características ha terminado! " + 
+"Los descriptores calculados se encuentran en las carpetas: " +
+"\n" + TelevisionDescriptors + " y " + CommercialsDescriptors)
+
+t_final = datetime.now()
+t_delta = t_final- t_inicial
+print("\n" + "El tiempo de ejecución fue de : " + str(t_delta))
