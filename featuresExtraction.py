@@ -67,8 +67,8 @@ def sobelFilter(filename, sobel_threshold, frameStride):
                 print(str(frameIndex) + " " + frameTimestamp)
                 """
 
-                # Save timestamp for each frame
-                frameTimestamp = "{0:.1f}".format(round(capture.get(0),2))
+                # Save timestamp for each frame in seconds
+                frameTimestamp = "{0:.1f}".format(round(capture.get(0)/1000,2))
                 frameTimestamps.append(frameTimestamp)
                 
                 # Frame Processing
@@ -83,10 +83,9 @@ def sobelFilter(filename, sobel_threshold, frameStride):
                 sobelX = cv2.Sobel(grayFrame, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=3)
                 sobelY = cv2.Sobel(grayFrame, ddepth=cv2.CV_32F, dx=0, dy=1, ksize=3)
 
-                ## Gradient Magnitude or Approximation for Gradient Magnitude (Only Choose One!)
+                ## Gradient Magnitude or Approximation for Gradient Magnitude 
                 
                 gradientAbs = np.sqrt(np.square(sobelX) + np.square(sobelY))
-                #gradientAbs = np.abs(sobelX) + np.abs(sobelY)
 
                 # Apply Sobel Threshold to obtain a descriptor 
                 retval, borders = cv2.threshold(gradientAbs, thresh=sobel_threshold, maxval=255, type=cv2.THRESH_BINARY)
@@ -118,7 +117,8 @@ def sobelFilter(filename, sobel_threshold, frameStride):
 ## Set Params and Run
 
 sobel_threshold = 150
-frameStride = 4
+frameStride = 7
+distance_threshold = 1.0
 
 """
 std_input = input("\n" + "Ingrese el nombre del video de televisión" + 
@@ -142,6 +142,7 @@ videoName = str(os.path.basename(video_television_path).split(".")[0])
 TelevisionDescriptors = "TelevisionDescriptors"
 if not os.access(TelevisionDescriptors, os.F_OK):
     os.mkdir(TelevisionDescriptors)
+
 os.chdir("./" + TelevisionDescriptors)
 np.save("frameTimestamps_" + videoName, frameTimestamps)
 np.save("frameDescriptors_" + videoName, frameDescriptors)
@@ -150,6 +151,7 @@ os.chdir("../")
 CommercialsDescriptors = "CommercialsDescriptors"
 if not os.access(CommercialsDescriptors, os.F_OK):
     os.mkdir(CommercialsDescriptors)
+
 os.chdir("./" + CommercialsDescriptors)
 for commercial in os.listdir(video_comercial_path):
     video_comercial = video_comercial_path + "/" + commercial
@@ -163,14 +165,28 @@ print("\n" + "La extracción de características ha terminado! " +
 "Los descriptores calculados se encuentran en las carpetas: " +
 "\n" + TelevisionDescriptors + " y " + CommercialsDescriptors)
 
-"""
-os.chdir("./" + TelevisionDescriptors)
-with open("frameDescriptors_" + videoName, "r") as TelevisionDescriptors:
-    television_frameDescriptors = TelevisionDescriptors.read()
-    test = television_frameDescriptors
 
-    print(test)
-"""
+
+os.chdir("./" + TelevisionDescriptors)
+tv_descriptors = np.load("frameDescriptors_" + videoName + ".npy") 
+tv_timestamps = np.load("frameTimestamps_"+ videoName + ".npy")
+os.chdir("..")
+os.chdir("./" + CommercialsDescriptors)
+
+bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
+
+for commercial in os.listdir(os.getcwd()):
+    video_comercial = commercial.split("_")[1].split(".")[0]
+    commercial_descriptors = np.load(commercial)
+    matches = bf.match(tv_descriptors, commercial_descriptors)
+    for match in matches:
+        if match.distance <= distance_threshold:
+            print("video_comercial = " + video_comercial)
+            print("videoName = " + videoName)
+            print(tv_descriptors[match.queryIdx])
+            print(commercial_descriptors[match.trainIdx])
+            print("timestamp = " + tv_timestamps[match.queryIdx])
+    break 
 
 t_final = datetime.now()
 t_delta = t_final- t_inicial
