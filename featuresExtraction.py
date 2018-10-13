@@ -135,7 +135,6 @@ frameStride = 4
 ### Búsqueda por Similitud
 distance_threshold = 1.5
 
-
 """
 std_input = input("\n" + "Ingrese el nombre del video de televisión" + 
 "(con su extensión) y luego el nombre de la carpeta con los comerciales " +
@@ -172,12 +171,12 @@ for commercial in os.listdir(video_comercial_path):
     commercial = str(os.path.basename(commercial.split(".")[0]))
     np.save("frameDescriptors_" + commercial, frameDescriptors)
 os.chdir("../")
-"""
+
 
 print("\n" + " I) La extracción de características ha terminado! " + 
 "Los descriptores calculados se encuentran en las carpetas: " +
 "\n" + "\n" + "     " + TelevisionDescriptors + " y " + CommercialsDescriptors)
-
+"""
 
 # Búsqueda por Similitud
 
@@ -218,15 +217,19 @@ for commercial in os.listdir(os.getcwd()):
 
 os.chdir("../")
 npArraytoFolder(SimilaritySearch, Q, "Q_" + videoName)
-"""
+
 
 print("\n" + " II) La búsqueda por similitud ha terminado! " + 
 "Los conjuntos Q y K se encuentran en la carpeta: " +
 "\n" + "\n" + "     " + SimilaritySearch)
+"""
 
 #Detección de Apariciones
 
-
+detections = open("detecciones.txt", "w")
+detections.write(videoName + "\t" + "timestamp" + "\t" + "duracion"
++ "\t" + "comercialName")
+detections.close()
 
 t_final = datetime.now()
 t_delta = t_final- t_inicial
