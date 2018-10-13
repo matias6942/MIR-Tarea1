@@ -61,15 +61,16 @@ def sobelFilter(filename, sobel_threshold, frameStride):
             frameCount+=1
             if(frameCount == 1 or frameCount % frameStride == 0):
                 
+
+                # Save timestamp for each frame in seconds
+                frameTimestamp = "{0:.1f}".format(round(capture.get(0)/1000,2))
+                frameTimestamps.append(frameTimestamp)
+
                 """
                 # DEBUG                
                 frameIndex = int(capture.get(cv2.CAP_PROP_POS_FRAMES))
                 print(str(frameIndex) + " " + frameTimestamp)
                 """
-
-                # Save timestamp for each frame in seconds
-                frameTimestamp = "{0:.1f}".format(round(capture.get(0)/1000,2))
-                frameTimestamps.append(frameTimestamp)
                 
                 # Frame Processing
 
@@ -113,12 +114,27 @@ def sobelFilter(filename, sobel_threshold, frameStride):
 
     return frameTimestamps, frameDescriptors
 
+def npArraytoFolder(folderName, npArray, npArrayName):
+    """Saves an npArray in a folder with folderName
+    in the current directory.
+    """
+    if not os.access(folderName, os.F_OK):
+        os.mkdir(folderName)
+
+    os.chdir("./" + folderName)
+    np.save(npArrayName, npArray)
+    os.chdir("../")
+
 
 ## Set Params and Run
 
+### Extracción de Características
 sobel_threshold = 150
-frameStride = 7
-distance_threshold = 1.0
+frameStride = 4
+
+### Búsqueda por Similitud
+distance_threshold = 1.5
+
 
 """
 std_input = input("\n" + "Ingrese el nombre del video de televisión" + 
@@ -135,20 +151,17 @@ video_comercial_path = "../" + std_input.split(" ")[1]
 
 video_television_path = "./television/" + video_television
 
-frameTimestamps, frameDescriptors =  sobelFilter(video_television_path, sobel_threshold, frameStride)
+#frameTimestamps, frameDescriptors =  sobelFilter(video_television_path, sobel_threshold, frameStride)
 
 videoName = str(os.path.basename(video_television_path).split(".")[0])
 
 TelevisionDescriptors = "TelevisionDescriptors"
-if not os.access(TelevisionDescriptors, os.F_OK):
-    os.mkdir(TelevisionDescriptors)
-
-os.chdir("./" + TelevisionDescriptors)
-np.save("frameTimestamps_" + videoName, frameTimestamps)
-np.save("frameDescriptors_" + videoName, frameDescriptors)
-os.chdir("../")
-
 CommercialsDescriptors = "CommercialsDescriptors"
+
+"""
+npArraytoFolder(TelevisionDescriptors, frameTimestamps, "frameTimestamps_" + videoName)
+npArraytoFolder(TelevisionDescriptors, frameDescriptors, "frameDescriptors_" + videoName)
+
 if not os.access(CommercialsDescriptors, os.F_OK):
     os.mkdir(CommercialsDescriptors)
 
@@ -159,34 +172,61 @@ for commercial in os.listdir(video_comercial_path):
     commercial = str(os.path.basename(commercial.split(".")[0]))
     np.save("frameDescriptors_" + commercial, frameDescriptors)
 os.chdir("../")
+"""
 
-
-print("\n" + "La extracción de características ha terminado! " + 
+print("\n" + " I) La extracción de características ha terminado! " + 
 "Los descriptores calculados se encuentran en las carpetas: " +
-"\n" + TelevisionDescriptors + " y " + CommercialsDescriptors)
+"\n" + "\n" + "     " + TelevisionDescriptors + " y " + CommercialsDescriptors)
 
 
+# Búsqueda por Similitud
 
+SimilaritySearch = "SimilaritySearch"
+
+"""
 os.chdir("./" + TelevisionDescriptors)
 tv_descriptors = np.load("frameDescriptors_" + videoName + ".npy") 
 tv_timestamps = np.load("frameTimestamps_"+ videoName + ".npy")
-os.chdir("..")
+os.chdir("../")
+
+bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
+
 os.chdir("./" + CommercialsDescriptors)
-
-bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
-
 for commercial in os.listdir(os.getcwd()):
     video_comercial = commercial.split("_")[1].split(".")[0]
     commercial_descriptors = np.load(commercial)
     matches = bf.match(tv_descriptors, commercial_descriptors)
+    Q = []
+    K = []
     for match in matches:
         if match.distance <= distance_threshold:
-            print("video_comercial = " + video_comercial)
-            print("videoName = " + videoName)
-            print(tv_descriptors[match.queryIdx])
-            print(commercial_descriptors[match.trainIdx])
-            print("timestamp = " + tv_timestamps[match.queryIdx])
-    break 
+            Q.append(tv_descriptors[match.queryIdx])
+            K.append(commercial_descriptors[match.trainIdx])
+            
+            #print("timestamp = " + tv_timestamps[match.queryIdx])
+
+            #DEBUG
+            #print("distance with best match = " + str(match.distance))
+
+    Q = np.asarray(Q)
+    K = np.asarray(K)
+
+    os.chdir("../")
+    npArraytoFolder(SimilaritySearch, K, "K_" + video_comercial)
+    os.chdir("./" + CommercialsDescriptors)
+    
+
+os.chdir("../")
+npArraytoFolder(SimilaritySearch, Q, "Q_" + videoName)
+"""
+
+print("\n" + " II) La búsqueda por similitud ha terminado! " + 
+"Los conjuntos Q y K se encuentran en la carpeta: " +
+"\n" + "\n" + "     " + SimilaritySearch)
+
+#Detección de Apariciones
+
+
 
 t_final = datetime.now()
 t_delta = t_final- t_inicial
