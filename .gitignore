@@ -4,7 +4,9 @@ television/
 .vscode/
 TelevisionDescriptors/
 CommercialsDescriptors/
+SimilaritySearch/
 
 # Files
 Tarea1-comerciales.pdf
 .pylintrc
+detecciones.txt
