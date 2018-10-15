@@ -156,11 +156,11 @@ sobel_threshold = 150
 frameStride = 4
 
 ### Búsqueda por Similitud
-distance_threshold = 1.5
+distance_threshold = 2.7 
 
 ### Detección de Apariciones
-time_threshold = 3.5 #3.5
-duration_threshold = 3.0
+time_threshold = 1.5 
+duration_threshold = 2.5 # 2.5 - 2.3 - 0.9
 
 
 """
@@ -171,7 +171,7 @@ std_input = input("\n" + "Ingrese el nombre del video de televisión" +
 
 t_inicial = datetime.now()
 
-std_input = "mega-2014_04_10.mp4 comerciales"
+std_input = "mega-2014_04_16.mp4 comerciales"
 
 video_television = std_input.split(" ")[0]
 video_comercial_path = "../" + std_input.split(" ")[1]
@@ -205,10 +205,11 @@ print("\n" + " I) La extracción de características ha terminado! " +
 "Los descriptores calculados se encuentran en las carpetas: " +
 "\n" + "\n" + "     " + TelevisionDescriptors + " y " + CommercialsDescriptors)
 """
+
 # Búsqueda por Similitud
 
 SimilaritySearch = "SimilaritySearch"
-"""
+
 os.chdir("./" + TelevisionDescriptors)
 tv_descriptors = np.load("frameDescriptors_" + videoName + ".npy") 
 tv_timestamps = np.load("frameTimestamps_"+ videoName + ".npy")
@@ -247,7 +248,7 @@ os.chdir("../")
 print("\n" + " II) La búsqueda por similitud ha terminado! " + 
 "Los conjuntos Q y R se encuentran en la carpeta: " +
 "\n" + "\n" + "     " + SimilaritySearch)
-"""
+
 #Detección de Apariciones
 
 detections = open("detecciones.txt", "w")
@@ -278,6 +279,10 @@ for name in os.listdir(os.getcwd()):
 
 os.chdir("../")
 detections.close()
+
+print("\n" + " II) Detección de apariciones ha terminado! " + 
+"el resultado se ecuentra en el archivo: " +
+"\n" + "\n" + "     " + "detecciones.txt")
 
 t_final = datetime.now()
 t_delta = t_final- t_inicial
