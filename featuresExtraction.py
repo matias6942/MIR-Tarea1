@@ -127,7 +127,6 @@ def npArraytoFolder(folderName, npArray, npArrayName):
 
 def adDetector(adTimestamps, time_threshold):
     n = len(adTimestamps)-1
-    #subArray = []
     for i in range(n):
         try:
             delta = adTimestamps[i+1] - adTimestamps[i]
@@ -136,12 +135,8 @@ def adDetector(adTimestamps, time_threshold):
         except IndexError:
             pass
         
-        if delta <= time_threshold: 
+        if delta <= time_threshold and i != len(K)-2: 
             continue
-        
-        #elif i == n-1:
-        #    return adTimestamps
-
         else:
             end_index = i+1
             subArrays.append(adTimestamps[:end_index])
@@ -164,7 +159,7 @@ frameStride = 4
 distance_threshold = 1.5
 
 ### Detección de Apariciones
-time_threshold = 3.0 #2.9
+time_threshold = 3.5 #3.5
 duration_threshold = 3.0
 
 
@@ -243,8 +238,10 @@ for commercial in os.listdir(os.getcwd()):
     duration = np.asarray(duration)
     npArraytoFolder(SimilaritySearch, duration, "duration_" + video_comercial)
     npArraytoFolder(SimilaritySearch, K, "K_" + video_comercial)
+    #Remove this line!
     os.chdir("./" + CommercialsDescriptors)
 
+#Remove this line too!
 os.chdir("../")
 
 print("\n" + " II) La búsqueda por similitud ha terminado! " + 
@@ -263,37 +260,18 @@ for name in os.listdir(os.getcwd()):
     
     comercialName = name.split("_")
     if comercialName[0] == "K":
-
-        debug = []
-
         ad_id = str(comercialName[1].split(".")[0])
-
-        """
-        if ad_id != "mall plaza (2)":
-            continue
-        """   
-
         K = np.load(name).astype(np.float)
-        print(ad_id)
-        #print(K)
         duration_GOLD = np.load("duration_" + ad_id + ".npy")      
         subArrays = adDetector(K, time_threshold)
-        print(subArrays)
         for subArray in subArrays:
             if subArray != []:     
                 start = subArray[0]
                 end = subArray[-1]
                 duration = end-start
-
-                debug.append(float("{0:.1f}".format(duration)))
-                
                 if np.abs(duration - duration_GOLD) <= duration_threshold: 
                     starts.append(start)
                     durations.append(float("{0:.1f}".format(duration)))
-
-        #print(debug)
-        #print(duration_GOLD)
-
         for i in range(len(starts)):
             detections.write(videoName + "\t" + str(starts[i]) + "\t" + str(durations[i])
             + "\t" + ad_id + "\n")
