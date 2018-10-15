@@ -1,21 +1,8 @@
-mega-2014_04_10	start	duracion	colgate sensitive
-mega-2014_04_10	start	duracion	scotiabank
-mega-2014_04_10	start	duracion	presto
-mega-2014_04_10	start	duracion	dove desodorante hombre
-mega-2014_04_10	start	duracion	dfm motor
-mega-2014_04_10	start	duracion	pantene expert
-mega-2014_04_10	start	duracion	ballerina
-mega-2014_04_10	start	duracion	samsung
-mega-2014_04_10	start	duracion	dove pelo
-mega-2014_04_10	start	duracion	mall plaza
-mega-2014_04_10	start	duracion	mall plaza (2)
-mega-2014_04_10	start	duracion	omo1
-mega-2014_04_10	start	duracion	soprole panacota
-mega-2014_04_10	start	duracion	limon soda
-mega-2014_04_10	start	duracion	colgate total12
-mega-2014_04_10	start	duracion	petrobras pantuflas mundialeras
-mega-2014_04_10	start	duracion	cristal
-mega-2014_04_10	start	duracion	vtr
-mega-2014_04_10	start	duracion	mr big (2)
-mega-2014_04_10	start	duracion	ferreteria mts
-mega-2014_04_10	start	duracion	falabella connect
+mega-2014_04_10	295.0	27.5	scotiabank
+mega-2014_04_10	948.0	27.4	scotiabank
+mega-2014_04_10	1475.9	24.4	scotiabank
+mega-2014_04_10	1584.7	24.4	scotiabank
+mega-2014_04_10	2640.9	21.5	omo1
+mega-2014_04_10	2109.7	31.4	cristal
+mega-2014_04_10	368.0	31.5	vtr
+mega-2014_04_10	3337.5	15.4	falabella connect

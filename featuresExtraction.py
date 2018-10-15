@@ -96,10 +96,10 @@ def sobelFilter(filename, sobel_threshold, frameStride):
                
 
                 """
-                showFrame("Filtered Frame", frame, scaleMin0Max255=True)
+                showFrame("Filtered Frame", borders, scaleMin0Max255=True)
                 # Normal Speed cv2.waitKey(25) 
                 # Max Speed     cv.waitKey(1)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if cv2.waitKey(25) & 0xFF == ord('q'):
                     break
                 """
         
@@ -125,6 +125,34 @@ def npArraytoFolder(folderName, npArray, npArrayName):
     np.save(npArrayName, npArray)
     os.chdir("../")
 
+def adDetector(adTimestamps, time_threshold):
+    n = len(adTimestamps)-1
+    #subArray = []
+    for i in range(n):
+        try:
+            delta = adTimestamps[i+1] - adTimestamps[i]
+            #print(delta)
+            #print(adTimestamps)
+        except IndexError:
+            pass
+        
+        if delta <= time_threshold: 
+            continue
+        
+        #elif i == n-1:
+        #    return adTimestamps
+
+        else:
+            end_index = i+1
+            subArrays.append(adTimestamps[:end_index])
+            adTimestamps = adTimestamps[end_index+1:]
+            return adDetector(adTimestamps, time_threshold)
+    
+    return subArrays
+
+def calculateDuration(timestamps):
+    duration = timestamps[-1] - timestamps[1]
+    return duration
 
 ## Set Params and Run
 
@@ -136,7 +164,9 @@ frameStride = 4
 distance_threshold = 1.5
 
 ### Detección de Apariciones
-time_threshold = 0.3
+time_threshold = 3.0 #2.9
+duration_threshold = 3.0
+
 
 """
 std_input = input("\n" + "Ingrese el nombre del video de televisión" + 
@@ -183,7 +213,6 @@ print("\n" + " I) La extracción de características ha terminado! " +
 # Búsqueda por Similitud
 
 SimilaritySearch = "SimilaritySearch"
-
 """
 os.chdir("./" + TelevisionDescriptors)
 tv_descriptors = np.load("frameDescriptors_" + videoName + ".npy") 
@@ -196,7 +225,8 @@ os.chdir("./" + CommercialsDescriptors)
 for commercial in os.listdir(os.getcwd()):
     video_comercial = commercial.split("_")[1].split(".")[0]
     commercial_descriptors = np.load("frameDescriptors_" + video_comercial + ".npy")
-    commercial_timestamps = np.load("frameTimestamps_" + video_comercial + ".npy")
+    commercial_timestamps = np.load("frameTimestamps_" + video_comercial + ".npy").astype(np.float)
+    duration = [] 
     matches = bf.match(tv_descriptors, commercial_descriptors)
     K = []
     for match in matches:
@@ -209,6 +239,9 @@ for commercial in os.listdir(os.getcwd()):
     K = np.asarray(K)
 
     os.chdir("../")
+    duration.append(calculateDuration(commercial_timestamps))
+    duration = np.asarray(duration)
+    npArraytoFolder(SimilaritySearch, duration, "duration_" + video_comercial)
     npArraytoFolder(SimilaritySearch, K, "K_" + video_comercial)
     os.chdir("./" + CommercialsDescriptors)
 
@@ -218,32 +251,56 @@ print("\n" + " II) La búsqueda por similitud ha terminado! " +
 "Los conjuntos Q y R se encuentran en la carpeta: " +
 "\n" + "\n" + "     " + SimilaritySearch)
 """
-
 #Detección de Apariciones
 
 detections = open("detecciones.txt", "w")
 os.chdir("./" + SimilaritySearch)
 for name in os.listdir(os.getcwd()):
-    comercialName = name.split("_")[1].split(".")[0]
+    index = 0
+    starts = []
+    durations = []
+    subArrays = []
     
-    if comercialName != "mega-2014":
-        
+    comercialName = name.split("_")
+    if comercialName[0] == "K":
+
+        debug = []
+
+        ad_id = str(comercialName[1].split(".")[0])
+
+        """
+        if ad_id != "mall plaza (2)":
+            continue
+        """   
+
         K = np.load(name).astype(np.float)
-        n = len(K)
+        print(ad_id)
+        #print(K)
+        duration_GOLD = np.load("duration_" + ad_id + ".npy")      
+        subArrays = adDetector(K, time_threshold)
+        print(subArrays)
+        for subArray in subArrays:
+            if subArray != []:     
+                start = subArray[0]
+                end = subArray[-1]
+                duration = end-start
 
-        for i in range(n-1):
-            if K[i+1] - K[i] <= time_threshold:
-                pass 
-            
-        #duracion = end - start
-        detections.write(videoName + "\t" + "start" + "\t" + "duracion"
-        + "\t" + comercialName + "\n")
-detections.close()  
+                debug.append(float("{0:.1f}".format(duration)))
+                
+                if np.abs(duration - duration_GOLD) <= duration_threshold: 
+                    starts.append(start)
+                    durations.append(float("{0:.1f}".format(duration)))
 
+        #print(debug)
+        #print(duration_GOLD)
 
+        for i in range(len(starts)):
+            detections.write(videoName + "\t" + str(starts[i]) + "\t" + str(durations[i])
+            + "\t" + ad_id + "\n")
+
+os.chdir("../")
+detections.close()
 
 t_final = datetime.now()
 t_delta = t_final- t_inicial
 print("\n" + "El tiempo de ejecución fue de: " + str(t_delta) + "\n")
-
-
